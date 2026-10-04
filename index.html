@@ -1,11 +1,906 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Harish Car Racing Game 9571</title><style>html,body{margin:0;height:100%;overflow:hidden;font-family:Arial}#hud{position:fixed;z-index:2;top:10px;left:10px;color:#fff;background:#0008;padding:10px;border-radius:10px}#start{position:fixed;inset:0;z-index:3;display:grid;place-items:center;background:#0008}.box{background:#fff;padding:25px;border-radius:18px;text-align:center}button{padding:14px 24px;border:0;border-radius:12px;font-weight:bold}#controls{position:fixed;z-index:2;bottom:20px;left:0;right:0;display:flex;justify-content:space-around;pointer-events:none}.c{pointer-events:auto;width:70px;height:70px;border-radius:50%;border:0;background:#fffc;font-size:25px}</style></head><body><div id="hud">Speed: <b id="speed">0</b> km/h<br>Score: <b id="score">0</b></div><div id="start"><div class="box"><h1>🏁 Harish Car Racing Game 9571</h1><p>3D highway racing</p><button onclick="startGame()">START RACE</button></div></div><div id="controls"><button class="c" onpointerdown="left=1" onpointerup="left=0">◀</button><button class="c" onpointerdown="gas=1" onpointerup="gas=0">▲</button><button class="c" onpointerdown="right=1" onpointerup="right=0">▶</button></div><script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,80,350);const cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,500);cam.position.set(0,5,12);const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);r.shadowMap.enabled=true;document.body.appendChild(r.domElement);scene.add(new THREE.HemisphereLight(0xffffff,0x557744,1.7));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(-50,100,50);sun.castShadow=true;scene.add(sun);
-const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.7});const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x4d8a45));ground.rotation.x=-Math.PI/2;scene.add(ground);const road=new THREE.Mesh(new THREE.PlaneGeometry(18,700),mat(0x303236));road.rotation.x=-Math.PI/2;scene.add(road);
-for(let z=-340;z<340;z+=14)for(const x of[-3,3]){const m=new THREE.Mesh(new THREE.BoxGeometry(.15,.03,6),mat(0xffffff));m.position.set(x,.04,z);scene.add(m)}
-function car(color){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(2,0.65,4),mat(color));b.position.y=.6;g.add(b);const cab=new THREE.Mesh(new THREE.BoxGeometry(1.5,.6,1.8),mat(0x202833));cab.position.y=1.05;g.add(cab);return g}const player=car(0xd71920);player.position.z=7;scene.add(player);const traffic=[];function spawn(){const c=car([0x1565c0,0xf4c20d,0xffffff,0x20a050][Math.random()*4|0]);c.position.set([-6,-3,3,6][Math.random()*4|0],0,-120-Math.random()*120);scene.add(c);traffic.push(c)}
-for(let z=-330;z<120;z+=18)for(const x of[-13,13]){const t=new THREE.Mesh(new THREE.ConeGeometry(1.4,3.5,8),mat(0x226b2d));t.position.set(x,1.75,z+Math.random()*8);scene.add(t)}
-let running=false,left=0,right=0,gas=0,speed=0,score=0,last=performance.now(),sp=0;const keys={};onkeydown=e=>keys[e.key]=1;onkeyup=e=>keys[e.key]=0;window.startGame=()=>{document.getElementById('start').style.display='none';running=true};function loop(now){requestAnimationFrame(loop);const dt=Math.min(.04,(now-last)/1000);last=now;if(running){if(gas||keys.w||keys.ArrowUp)speed+=45*dt;else speed-=10*dt;speed=Math.max(0,Math.min(140,speed));let s=(right||keys.d||keys.ArrowRight?1:0)-(left||keys.a||keys.ArrowLeft?1:0);player.position.x+=s*(3+speed*.025)*dt;player.position.x=THREE.MathUtils.clamp(player.position.x,-7,7);scene.traverse(o=>{if(o!==player&&o.isMesh&&o.geometry?.parameters?.depth===6)o.position.z+=speed*dt;if(o.position?.z>30&&o.geometry?.parameters?.depth===6)o.position.z-=680});for(const c of traffic){c.position.z+=(speed*.7+25)*dt;if(Math.abs(c.position.x-player.position.x)<1.8&&Math.abs(c.position.z-player.position.z)<3){alert('Game Over! Score: '+Math.floor(score));location.reload()}}sp-=dt;if(sp<0){spawn();sp=1+Math.random()}for(let i=traffic.length-1;i>=0;i--)if(traffic[i].position.z>30){scene.remove(traffic[i]);traffic.splice(i,1)}score+=speed*dt*.1;cam.position.x+=(player.position.x-cam.position.x)*.08;cam.lookAt(player.position.x,1,-15);document.getElementById('speed').textContent=Math.round(speed);document.getElementById('score').textContent=Math.floor(score)}r.render(scene,cam)}requestAnimationFrame(loop);onresize=()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)};
-</script></body></html>
-<!--update game-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>Harish Car Racing Game</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #80cceb;
+  font-family: Arial, sans-serif;
+  touch-action: none;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  z-index: 1;
+}
+
+#hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 20;
+  color: white;
+  background: rgba(20,35,45,.75);
+  padding: 12px 18px;
+  border-radius: 15px;
+  font-size: 20px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 25px;
+  height: 130px;
+  z-index: 50;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0 35px;
+
+  pointer-events: none;
+}
+
+.control {
+  width: 105px;
+  height: 105px;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: rgba(255,255,255,.85);
+  color: #111;
+
+  font-size: 42px;
+  font-weight: bold;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: auto;
+  touch-action: none;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  box-shadow: 0 5px 15px rgba(0,0,0,.3);
+}
+
+#gas {
+  width: 120px;
+  height: 120px;
+  font-size: 38px;
+}
+
+.control:active,
+.control.pressed {
+  background: #bbbbbb;
+  transform: scale(.92);
+}
+
+@media (max-width: 600px) {
+  #controls {
+    bottom: 18px;
+    padding: 0 20px;
+  }
+
+  .control {
+    width: 90px;
+    height: 90px;
+    font-size: 35px;
+  }
+
+  #gas {
+    width: 105px;
+    height: 105px;
+  }
+
+  #hud {
+    font-size: 18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+  Speed: <span id="speed">0</span> km/h<br>
+  Score: <span id="score">0</span>
+</div>
+
+<div id="controls">
+
+  <button class="control" id="left" type="button">
+    ◀
+  </button>
+
+  <button class="control" id="gas" type="button">
+    ▲
+  </button>
+
+  <button class="control" id="right" type="button">
+    ▶
+  </button>
+
+</div>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+/* =========================
+   THREE.JS SETUP
+========================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x82cbea);
+
+scene.fog = new THREE.Fog(
+  0x82cbea,
+  60,
+  300
+);
+
+const camera = new THREE.PerspectiveCamera(
+  65,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+
+camera.position.set(
+  0,
+  5,
+  12
+);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true
+});
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio, 2)
+);
+
+renderer.setSize(
+  window.innerWidth,
+  window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+
+/* =========================
+   LIGHT
+========================= */
+
+const sun = new THREE.DirectionalLight(
+  0xffffff,
+  2
+);
+
+sun.position.set(
+  30,
+  60,
+  20
+);
+
+scene.add(sun);
+
+const ambient = new THREE.HemisphereLight(
+  0xffffff,
+  0x557755,
+  1.5
+);
+
+scene.add(ambient);
+
+
+/* =========================
+   GROUND
+========================= */
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(
+    1000,
+    1000
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0x438c43
+  })
+);
+
+ground.rotation.x = -Math.PI / 2;
+
+ground.position.y = -0.05;
+
+scene.add(ground);
+
+
+/* =========================
+   ROAD
+========================= */
+
+const road = new THREE.Mesh(
+  new THREE.PlaneGeometry(
+    14,
+    1000
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0x292b2f
+  })
+);
+
+road.rotation.x = -Math.PI / 2;
+
+road.position.y = 0;
+
+scene.add(road);
+
+
+/* =========================
+   ROAD LINES
+========================= */
+
+function roadLine(x) {
+
+  const line = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      .25,
+      7
+    ),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff
+    })
+  );
+
+  line.rotation.x = -Math.PI / 2;
+
+  line.position.set(
+    x,
+    .02,
+    0
+  );
+
+  scene.add(line);
+
+  return line;
+}
+
+roadLine(-6.7);
+roadLine(6.7);
+
+
+/* =========================
+   CENTER DASHES
+========================= */
+
+const dashes = [];
+
+for(let z = -450; z < 450; z += 12) {
+
+  const dash = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      .22,
+      6
+    ),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff
+    })
+  );
+
+  dash.rotation.x = -Math.PI / 2;
+
+  dash.position.set(
+    0,
+    .025,
+    z
+  );
+
+  scene.add(dash);
+
+  dashes.push(dash);
+}
+
+
+/* =========================
+   CAR
+========================= */
+
+function createCar(color) {
+
+  const car = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      2.4,
+      .7,
+      4.2
+    ),
+    new THREE.MeshStandardMaterial({
+      color: color
+    })
+  );
+
+  body.position.y = .65;
+
+  car.add(body);
+
+
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      1.7,
+      .65,
+      2
+    ),
+    new THREE.MeshStandardMaterial({
+      color: 0x202833
+    })
+  );
+
+  roof.position.set(
+    0,
+    1.15,
+    -.25
+  );
+
+  car.add(roof);
+
+
+  const wheelMaterial =
+    new THREE.MeshStandardMaterial({
+      color: 0x111111
+    });
+
+  for(const x of [-1.15,1.15]) {
+
+    for(const z of [-1.35,1.35]) {
+
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          .42,
+          .42,
+          .28,
+          20
+        ),
+        wheelMaterial
+      );
+
+      wheel.rotation.z =
+        Math.PI / 2;
+
+      wheel.position.set(
+        x,
+        .42,
+        z
+      );
+
+      car.add(wheel);
+    }
+  }
+
+  return car;
+}
+
+
+const player = createCar(
+  0xff2222
+);
+
+player.position.set(
+  0,
+  0,
+  8
+);
+
+scene.add(player);
+
+
+/* =========================
+   TRAFFIC
+========================= */
+
+const traffic = [];
+
+function addTraffic() {
+
+  const colors = [
+    0x1976d2,
+    0xffc107,
+    0xffffff,
+    0x9c27b0,
+    0x00a86b
+  ];
+
+  const car = createCar(
+    colors[
+      Math.floor(
+        Math.random() * colors.length
+      )
+    ]
+  );
+
+  const lanes = [
+    -4,
+    0,
+    4
+  ];
+
+  car.position.set(
+    lanes[
+      Math.floor(
+        Math.random() * lanes.length
+      )
+    ],
+    0,
+    -120
+  );
+
+  scene.add(car);
+
+  traffic.push(car);
+}
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let speed = 0;
+
+let score = 0;
+
+let steering = 0;
+
+let gas = false;
+
+let lastTime =
+  performance.now();
+
+let spawnTimer = 0;
+
+
+/* =========================
+   MOBILE CONTROLS
+========================= */
+
+const leftButton =
+  document.getElementById("left");
+
+const rightButton =
+  document.getElementById("right");
+
+const gasButton =
+  document.getElementById("gas");
+
+
+function press(button, actionDown, actionUp) {
+
+  button.addEventListener(
+    "pointerdown",
+    function(event) {
+
+      event.preventDefault();
+
+      button.classList.add("pressed");
+
+      actionDown();
+
+      if(button.setPointerCapture) {
+
+        try {
+          button.setPointerCapture(
+            event.pointerId
+          );
+        } catch(e) {}
+      }
+
+    },
+    { passive: false }
+  );
+
+
+  button.addEventListener(
+    "pointerup",
+    function(event) {
+
+      event.preventDefault();
+
+      button.classList.remove("pressed");
+
+      actionUp();
+
+    },
+    { passive: false }
+  );
+
+
+  button.addEventListener(
+    "pointercancel",
+    function(event) {
+
+      event.preventDefault();
+
+      button.classList.remove("pressed");
+
+      actionUp();
+
+    },
+    { passive: false }
+  );
+
+
+  button.addEventListener(
+    "pointerleave",
+    function(event) {
+
+      if(event.buttons === 0) {
+
+        button.classList.remove(
+          "pressed"
+        );
+
+        actionUp();
+      }
+
+    },
+    { passive: false }
+  );
+}
+
+
+/* LEFT */
+
+press(
+  leftButton,
+
+  function() {
+    steering = -1;
+  },
+
+  function() {
+
+    if(steering === -1) {
+      steering = 0;
+    }
+
+  }
+);
+
+
+/* RIGHT */
+
+press(
+  rightButton,
+
+  function() {
+    steering = 1;
+  },
+
+  function() {
+
+    if(steering === 1) {
+      steering = 0;
+    }
+
+  }
+);
+
+
+/* GAS */
+
+press(
+  gasButton,
+
+  function() {
+    gas = true;
+  },
+
+  function() {
+    gas = false;
+  }
+);
+
+
+/* =========================
+   KEYBOARD CONTROLS
+========================= */
+
+window.addEventListener(
+  "keydown",
+  function(event) {
+
+    if(event.key === "ArrowLeft") {
+      steering = -1;
+    }
+
+    if(event.key === "ArrowRight") {
+      steering = 1;
+    }
+
+    if(
+      event.key === "ArrowUp" ||
+      event.key === " "
+    ) {
+      gas = true;
+    }
+
+  }
+);
+
+
+window.addEventListener(
+  "keyup",
+  function(event) {
+
+    if(
+      event.key === "ArrowLeft" &&
+      steering === -1
+    ) {
+      steering = 0;
+    }
+
+    if(
+      event.key === "ArrowRight" &&
+      steering === 1
+    ) {
+      steering = 0;
+    }
+
+    if(
+      event.key === "ArrowUp" ||
+      event.key === " "
+    ) {
+      gas = false;
+    }
+
+  }
+);
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function animate(time) {
+
+  requestAnimationFrame(
+    animate
+  );
+
+  const dt = Math.min(
+    (time - lastTime) / 1000,
+    .05
+  );
+
+  lastTime = time;
+
+
+  /* ACCELERATION */
+
+  if(gas) {
+
+    speed +=
+      45 * dt;
+
+  } else {
+
+    speed -=
+      20 * dt;
+
+  }
+
+
+  speed = THREE.MathUtils.clamp(
+    speed,
+    0,
+    160
+  );
+
+
+  /* STEERING */
+
+  player.position.x +=
+    steering *
+    (speed / 60) *
+    7 *
+    dt;
+
+
+  player.position.x =
+    THREE.MathUtils.clamp(
+      player.position.x,
+      -5,
+      5
+    );
+
+
+  player.rotation.z =
+    -steering * .12;
+
+
+  /* MOVE ROAD */
+
+  const movement =
+    speed * dt;
+
+
+  for(const dash of dashes) {
+
+    dash.position.z += movement;
+
+    if(dash.position.z > 20) {
+
+      dash.position.z -= 900;
+
+    }
+
+  }
+
+
+  /* TRAFFIC */
+
+  spawnTimer += dt;
+
+  if(spawnTimer > 1.4) {
+
+    spawnTimer = 0;
+
+    addTraffic();
+
+  }
+
+
+  for(
+    let i = traffic.length - 1;
+    i >= 0;
+    i--
+  ) {
+
+    const car = traffic[i];
+
+    car.position.z +=
+      movement * .75;
+
+
+    /* COLLISION */
+
+    const dx =
+      Math.abs(
+        car.position.x -
+        player.position.x
+      );
+
+    const dz =
+      Math.abs(
+        car.position.z -
+        player.position.z
+      );
+
+    if(
+      dx < 2 &&
+      dz < 3
+    ) {
+
+      speed = 0;
+
+      car.position.z = -150;
+
+    }
+
+
+    if(car.position.z > 30) {
+
+      scene.remove(car);
+
+      traffic.splice(i,1);
+
+      score += 10;
+
+    }
+
+  }
+
+
+  /* SCORE */
+
+  score +=
+    speed * dt * .05;
+
+
+  /* CAMERA */
+
+  camera.position.x +=
+    (
+      player.position.x -
+      camera.position.x
+    ) * .08;
+
+  camera.position.z =
+    player.position.z + 12;
+
+  camera.lookAt(
+    player.position.x,
+    .7,
+    player.position.z - 20
+  );
+
+
+  /* HUD */
+
+  document.getElementById(
+    "speed"
+  ).textContent =
+    Math.round(speed);
+
+  document.getElementById(
+    "score"
+  ).textContent =
+    Math.floor(score);
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener(
+  "resize",
+  function() {
+
+    camera.aspect =
+      window.innerWidth /
+      window.innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+
+  }
+);
+
+
+/* START */
+
+animate(
+  performance.now()
+);
+
+</script>
+
+</body>
+</html>
